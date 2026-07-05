@@ -1,0 +1,17 @@
+# Vercel ignore — files NOT to upload to Vercel
+
+# Backend (deployed separately to Railway)
+apps/api
+apps/api/**
+
+# Root-level files not needed by the frontend
+railway.toml
+Procfile
+.git
+.github
+
+# Build artifacts that Vercel will regenerate
+**/node_modules
+**/dist
+**/.turbo
+**/.next

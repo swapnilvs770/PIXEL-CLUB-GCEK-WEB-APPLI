@@ -1,0 +1,9 @@
+# Railway ignore — files NOT to upload for backend build
+apps/web
+apps/web/**
+**/node_modules
+**/dist
+**/.next
+**/.vercel
+.git
+.github
