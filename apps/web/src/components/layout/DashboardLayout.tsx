@@ -1,158 +1,83 @@
-import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
-import {
-  Camera,
-  LayoutDashboard,
-  LogOut,
-  Moon,
-  Sun,
-  Menu,
-  ClipboardList,
-  Users,
-  Image as ImageIcon,
-  ChevronDown,
-  UserCircle,
-  FileText,
-  BarChart3,
-  Settings as SettingsIcon,
-} from 'lucide-react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { Menu, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import NotificationBell from './NotificationBell';
+import Sidebar from './Sidebar';
+import Topbar from './Topbar';
+import { PageTransition } from '@/components/motion/page-transition';
+import { fadeIn } from '@/lib/motion';
 
-interface NavItem {
-  to: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-}
-
-const userNav: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/requests', label: 'My requests', icon: ClipboardList },
-  { to: '/gallery', label: 'Gallery', icon: ImageIcon },
-  { to: '/team', label: 'Team', icon: UserCircle },
-];
-
-const adminNav: NavItem[] = [
-  { to: '/admin/users', label: 'Users', icon: Users },
-  { to: '/admin/requests', label: 'All requests', icon: ClipboardList },
-  { to: '/admin/albums', label: 'Albums', icon: ImageIcon },
-  { to: '/admin/team', label: 'Team batches', icon: UserCircle },
-  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/admin/logs', label: 'Audit logs', icon: FileText },
-  { to: '/admin/settings', label: 'Settings', icon: SettingsIcon },
-];
-
+/**
+ * Premium dashboard shell:
+ *  - Persistent sidebar (desktop) / drawer (mobile)
+ *  - Glass topbar
+ *  - Page transitions on every route change
+ *  - Aurora background + spotlight on top of <body>
+ */
 export default function DashboardLayout() {
-  const { user, logout } = useAuth();
-  const { resolved, toggle } = useTheme();
-  const navigate = useNavigate();
-  const [adminOpen, setAdminOpen] = useState(false);
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login', { replace: true });
-  };
-
-  const renderLink = (item: NavItem, end = false) => (
-    <NavLink
-      key={item.to}
-      to={item.to}
-      end={end}
-      className={({ isActive }) =>
-        cn(
-          'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-          isActive
-            ? 'bg-secondary text-secondary-foreground'
-            : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
-        )
-      }
-    >
-      <item.icon className="h-4 w-4" />
-      {item.label}
-    </NavLink>
-  );
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Menu">
-              <Menu className="h-5 w-5" />
-            </Button>
-            <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
-              <Camera className="h-5 w-5 text-primary" />
-              <span>Pixel Club</span>
-            </Link>
-          </div>
+    <div className="relative flex min-h-screen bg-background">
+      <Sidebar />
 
-          <nav className="hidden md:flex items-center gap-1">
-            {userNav.map((item) => renderLink(item, true))}
-
-            {user?.role === 'admin' && (
-              <div
-                className="relative"
-                onMouseEnter={() => setAdminOpen(true)}
-                onMouseLeave={() => setAdminOpen(false)}
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.div
+              initial={{ x: -264 }}
+              animate={{ x: 0 }}
+              exit={{ x: -264 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+              className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden"
+            >
+              <Sidebar />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="absolute right-2 top-2 z-10"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
               >
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-                  onClick={() => setAdminOpen((v) => !v)}
-                >
-                  Admin
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                {adminOpen && (
-                  <div className="absolute right-0 mt-1 w-56 rounded-md border bg-popover p-1 shadow-md">
-                    {adminNav.map((item) => (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        className={({ isActive }) =>
-                          cn(
-                            'flex items-center gap-2 rounded-sm px-2 py-2 text-sm transition-colors',
-                            isActive
-                              ? 'bg-secondary text-secondary-foreground'
-                              : 'hover:bg-secondary/60'
-                          )
-                        }
-                        onClick={() => setAdminOpen(false)}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </NavLink>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </nav>
+                <X className="h-4 w-4" />
+              </Button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-          <div className="flex items-center gap-2">
-            <NotificationBell />
-            <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
-              {resolved === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-            <div className="hidden sm:block text-sm">
-              <div className="font-medium leading-tight">{user?.name}</div>
-              <div className="text-xs text-muted-foreground capitalize">{user?.role}</div>
-            </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Logout">
-              <LogOut className="h-5 w-5" />
-            </Button>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar onMobileMenuToggle={() => setMobileOpen(true)} />
+
+        <main className="relative flex-1 overflow-x-hidden">
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                variants={fadeIn}
+                initial="hidden"
+                animate="show"
+              >
+                <PageTransition>
+                  <Outlet />
+                </PageTransition>
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </div>
-      </header>
-
-      <main className="flex-1">
-        <div className="container py-6">
-          <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

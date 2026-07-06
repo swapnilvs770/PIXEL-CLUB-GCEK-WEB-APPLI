@@ -29,6 +29,9 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
           <h1 className="text-xl font-semibold text-destructive">Access blocked</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Your account has been blocked. Please contact an admin.
+            <br>
+            Email : pixelclub.gcek@gmail.com
+            </br>
           </p>
         </div>
       </div>
